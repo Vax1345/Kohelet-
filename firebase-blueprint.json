@@ -1,0 +1,60 @@
+{
+  "entities": {
+    "Chapter": {
+      "title": "Chapter",
+      "description": "A blog post in the style of Kohelet",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Modern title of the thought" },
+        "content": { "type": "string", "description": "The thought rewritten in Kohelet style" },
+        "originalThought": { "type": "string", "description": "The original modern thought" },
+        "authorId": { "type": "string", "description": "UID of the author" },
+        "authorName": { "type": "string", "description": "Display name of the author" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of creation" },
+        "ratingCount": { "type": "integer", "description": "Number of ratings" },
+        "ratingSum": { "type": "integer", "description": "Sum of all ratings" }
+      },
+      "required": ["title", "content", "authorId", "createdAt"]
+    },
+    "Rating": {
+      "title": "Rating",
+      "description": "A user rating for a chapter",
+      "type": "object",
+      "properties": {
+        "chapterId": { "type": "string" },
+        "userId": { "type": "string" },
+        "score": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["chapterId", "userId", "score", "createdAt"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "A user comment on a chapter",
+      "type": "object",
+      "properties": {
+        "chapterId": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "isModerated": { "type": "boolean" }
+      },
+      "required": ["chapterId", "authorId", "authorName", "content", "createdAt"]
+    }
+  },
+  "firestore": {
+    "chapters": {
+      "schema": "Chapter",
+      "description": "Collection of Kohelet-style blog posts"
+    },
+    "ratings": {
+      "schema": "Rating",
+      "description": "Collection of user ratings"
+    },
+    "comments": {
+      "schema": "Comment",
+      "description": "Collection of user comments"
+    }
+  }
+}
