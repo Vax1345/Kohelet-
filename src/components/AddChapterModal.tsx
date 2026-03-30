@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Loader2 } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { toast } from 'sonner';
 
 interface AddChapterModalProps {
   isOpen: boolean;
@@ -12,10 +13,19 @@ interface AddChapterModalProps {
 export function AddChapterModal({ isOpen, onClose }: AddChapterModalProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [order, setOrder] = useState('1');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!title.trim() || !content.trim() || !auth.currentUser) return;
+    if (!title.trim() || !content.trim()) {
+      toast.error('יש למלא כותרת ותוכן');
+      return;
+    }
+
+    if (!auth.currentUser) {
+      toast.error('עליך להיות מחובר כדי לפרסם פרק');
+      return;
+    }
     
     setIsSaving(true);
     const path = 'chapters';
@@ -23,14 +33,23 @@ export function AddChapterModal({ isOpen, onClose }: AddChapterModalProps) {
       await addDoc(collection(db, path), {
         title: title.trim(),
         content: content.trim(),
+        order: parseInt(order) || 0,
         authorId: auth.currentUser.uid,
         authorName: auth.currentUser.displayName || 'אלמוני',
         createdAt: serverTimestamp(),
       });
+      toast.success('הפרק פורסם בהצלחה!');
       onClose();
       setTitle('');
       setContent('');
-    } catch (error) {
+      setOrder('1');
+    } catch (error: any) {
+      console.error('Error saving chapter:', error);
+      if (error.message?.includes('permission-denied') || error.code === 'permission-denied') {
+        toast.error('אין לך הרשאות לפרסם פרק. וודא שאתה מחובר כ-Admin.');
+      } else {
+        toast.error('שגיאה בפרסום הפרק. נסה שוב מאוחר יותר.');
+      }
       handleFirestoreError(error, OperationType.CREATE, path);
     } finally {
       setIsSaving(false);
@@ -62,6 +81,16 @@ export function AddChapterModal({ isOpen, onClose }: AddChapterModalProps) {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="למשל: על החיים ב-2026"
+                  className="w-full p-3 bg-white border border-accent/20 rounded-lg focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-accent uppercase tracking-wider">סדר תצוגה (מספר)</label>
+                <input
+                  type="number"
+                  value={order}
+                  onChange={(e) => setOrder(e.target.value)}
                   className="w-full p-3 bg-white border border-accent/20 rounded-lg focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all"
                 />
               </div>

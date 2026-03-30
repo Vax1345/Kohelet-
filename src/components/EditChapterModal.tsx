@@ -4,6 +4,7 @@ import { X, Loader2, Save } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Chapter } from '../types';
+import { toast } from 'sonner';
 
 interface EditChapterModalProps {
   chapter: Chapter | null;
@@ -13,17 +14,27 @@ interface EditChapterModalProps {
 export function EditChapterModal({ chapter, onClose }: EditChapterModalProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [order, setOrder] = useState('1');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (chapter) {
       setTitle(chapter.title);
       setContent(chapter.content);
+      setOrder(chapter.order?.toString() || '1');
     }
   }, [chapter]);
 
   const handleSave = async () => {
-    if (!chapter || !title.trim() || !content.trim() || !auth.currentUser) return;
+    if (!chapter || !title.trim() || !content.trim()) {
+      toast.error('יש למלא כותרת ותוכן');
+      return;
+    }
+
+    if (!auth.currentUser) {
+      toast.error('עליך להיות מחובר כדי לערוך פרק');
+      return;
+    }
     
     setIsSaving(true);
     const path = `chapters/${chapter.id}`;
@@ -32,10 +43,18 @@ export function EditChapterModal({ chapter, onClose }: EditChapterModalProps) {
       await updateDoc(chapterRef, {
         title: title.trim(),
         content: content.trim(),
+        order: parseInt(order) || 0,
         updatedAt: serverTimestamp(),
       });
+      toast.success('השינויים נשמרו בהצלחה!');
       onClose();
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error updating chapter:', error);
+      if (error.message?.includes('permission-denied') || error.code === 'permission-denied') {
+        toast.error('אין לך הרשאות לערוך פרק זה.');
+      } else {
+        toast.error('שגיאה בשמירת השינויים. נסה שוב מאוחר יותר.');
+      }
       handleFirestoreError(error, OperationType.UPDATE, path);
     } finally {
       setIsSaving(false);
@@ -66,6 +85,16 @@ export function EditChapterModal({ chapter, onClose }: EditChapterModalProps) {
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  className="w-full p-3 bg-white border border-accent/20 rounded-lg focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-accent uppercase tracking-wider">סדר תצוגה (מספר)</label>
+                <input
+                  type="number"
+                  value={order}
+                  onChange={(e) => setOrder(e.target.value)}
                   className="w-full p-3 bg-white border border-accent/20 rounded-lg focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all"
                 />
               </div>

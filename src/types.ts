@@ -2,6 +2,7 @@ export interface Chapter {
   id: string;
   title: string;
   content: string;
+  order: number;
   originalThought?: string;
   authorId: string;
   authorName: string;

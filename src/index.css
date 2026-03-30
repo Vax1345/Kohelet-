@@ -11,6 +11,10 @@
   --color-accent: #5a5a40;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   @apply bg-parchment text-ink font-body antialiased;
   direction: rtl;
