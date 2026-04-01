@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { db, auth, signInWithGoogle, logout, handleFirestoreError, OperationType } from './firebase';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { Chapter } from './types';
+import { Chapter, Book } from './types';
 import { ChapterCard } from './components/ChapterCard';
 import { AddChapterModal } from './components/AddChapterModal';
 import { EditChapterModal } from './components/EditChapterModal';
-import { LogIn, LogOut, Plus, ScrollText, Loader2, Menu, X as CloseIcon, Share2, Search, ArrowUp } from 'lucide-react';
+import { LogIn, LogOut, Plus, ScrollText, Loader2, Menu, X as CloseIcon, Share2, Search, ArrowUp, Quote } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toaster, toast } from 'sonner';
 
@@ -18,6 +18,7 @@ export default function App() {
   const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<Book>('kohelet');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -68,12 +69,30 @@ export default function App() {
   const isAdmin = user?.email?.toLowerCase() === 'tzachi@vax-man.com';
 
   const filteredChapters = chapters.filter(chapter => 
-    chapter.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    chapter.content.toLowerCase().includes(searchQuery.toLowerCase())
+    (chapter.book === selectedBook || (!chapter.book && selectedBook === 'kohelet')) &&
+    (chapter.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+     chapter.content.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const bookConfig = {
+    kohelet: {
+      title: 'בלוג קהלת 2026',
+      subtitle: 'הבל הבלים, הכל הבל',
+      heroTitle: 'מחשבות אקטואליות',
+      heroQuote: '"מַה-שֶּׁהָיָה הוּא שֶׁיִּהְיֶה, וּמַה-שֶּׁנַּעֲשָׂה הוּא שֶׁיֵּעָשֶׂה; וְאֵין כָּל-חָדָשׁ תַּחַת הַשָּׁמֶשׁ."',
+      icon: <ScrollText className="w-5 h-5 sm:w-6 h-6" />
+    },
+    mishlei: {
+      title: 'בלוג משלי 2026',
+      subtitle: 'חכמה ומוסר בימינו',
+      heroTitle: 'משלי חכמה',
+      heroQuote: '"לָדַעַת חָכְמָה וּמוּסָר, לְהָבִין אִמְרֵי בִינָה."',
+      icon: <Quote className="w-5 h-5 sm:w-6 h-6" />
+    }
   };
 
   return (
@@ -88,11 +107,11 @@ export default function App() {
             title="פתח תוכן עניינים"
           >
             <div className="bg-accent p-1.5 sm:p-2 rounded-lg text-white group-hover:scale-110 transition-transform">
-              <ScrollText className="w-5 h-5 sm:w-6 h-6" />
+              {bookConfig[selectedBook].icon}
             </div>
             <div className="text-right">
-              <h1 className="text-xl sm:text-2xl font-bold text-accent">בלוג קהלת 2026</h1>
-              <p className="text-[8px] sm:text-[10px] font-classic uppercase tracking-widest text-ink/40">הבל הבלים, הכל הבל (לחץ לתוכן)</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-accent">{bookConfig[selectedBook].title}</h1>
+              <p className="text-[8px] sm:text-[10px] font-classic uppercase tracking-widest text-ink/40">{bookConfig[selectedBook].subtitle} (לחץ לתוכן)</p>
             </div>
           </button>
 
@@ -102,8 +121,8 @@ export default function App() {
                 const url = window.location.origin;
                 if (navigator.share) {
                   navigator.share({
-                    title: 'בלוג קהלת 2026',
-                    text: 'מחשבות אקטואליות מנוסחות בסגנון קהלת',
+                    title: bookConfig[selectedBook].title,
+                    text: bookConfig[selectedBook].subtitle,
                     url: url
                   }).catch(() => {
                     navigator.clipboard.writeText(url);
@@ -143,40 +162,66 @@ export default function App() {
         </div>
       </header>
 
-      {/* Sticky Search Bar */}
+      {/* Book Switcher & Search */}
       <div className="sticky top-[61px] sm:top-[73px] z-30 bg-white/90 backdrop-blur-md border-b border-accent/5 py-2 sm:py-3 shadow-sm">
-        <div className="max-w-4xl mx-auto px-6 relative group">
-          <div className="absolute inset-y-0 right-10 flex items-center pointer-events-none text-accent/40 group-focus-within:text-accent transition-colors">
-            <Search className="w-4 h-4 sm:w-5 h-5" />
-          </div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="חפשו בפרקים..."
-            className="w-full py-2.5 sm:py-3 pr-10 sm:pr-12 pl-10 bg-accent/5 border border-transparent focus:bg-white focus:border-accent/20 rounded-xl outline-none transition-all text-base sm:text-lg font-classic italic"
-          />
-          {searchQuery && (
+        <div className="max-w-4xl mx-auto px-6 space-y-3">
+          {/* Book Tabs */}
+          <div className="flex bg-accent/5 p-1 rounded-xl">
             <button
-              onClick={() => setSearchQuery('')}
-              className="absolute inset-y-0 left-10 flex items-center text-ink/20 hover:text-ink/60 transition-colors"
+              onClick={() => setSelectedBook('kohelet')}
+              className={`flex-1 py-2 px-4 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                selectedBook === 'kohelet' ? 'bg-white text-accent shadow-sm' : 'text-ink/40 hover:text-accent'
+              }`}
             >
-              <CloseIcon className="w-4 h-4 sm:w-5 h-5" />
+              <ScrollText className="w-4 h-4" />
+              קהלת
             </button>
-          )}
+            <button
+              onClick={() => setSelectedBook('mishlei')}
+              className={`flex-1 py-2 px-4 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                selectedBook === 'mishlei' ? 'bg-white text-accent shadow-sm' : 'text-ink/40 hover:text-accent'
+              }`}
+            >
+              <Quote className="w-4 h-4" />
+              משלי
+            </button>
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative group">
+            <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-accent/40 group-focus-within:text-accent transition-colors">
+              <Search className="w-4 h-4 sm:w-5 h-5" />
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={`חפשו ב${selectedBook === 'kohelet' ? 'קהלת' : 'משלי'}...`}
+              className="w-full py-2.5 sm:py-3 pr-10 sm:pr-12 pl-10 bg-accent/5 border border-transparent focus:bg-white focus:border-accent/20 rounded-xl outline-none transition-all text-base sm:text-lg font-classic italic"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute inset-y-0 left-4 flex items-center text-ink/20 hover:text-ink/60 transition-colors"
+              >
+                <CloseIcon className="w-4 h-4 sm:w-5 h-5" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Hero Section */}
       <section className="max-w-4xl mx-auto px-6 py-12 sm:py-20 text-center">
         <motion.div
+          key={selectedBook}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          <h2 className="text-4xl sm:text-6xl font-serif font-bold text-accent mb-4 sm:mb-6">מחשבות אקטואליות</h2>
+          <h2 className="text-4xl sm:text-6xl font-serif font-bold text-accent mb-4 sm:mb-6">{bookConfig[selectedBook].heroTitle}</h2>
           <p className="text-lg sm:text-xl font-classic italic text-ink/60 max-w-2xl mx-auto leading-relaxed">
-            "מַה-שֶּׁהָיָה הוּא שֶׁיִּהְיֶה, וּמַה-שֶּׁנַּעֲשָׂה הוּא שֶׁיֵּעָשֶׂה; וְאֵין כָּל-חָדָשׁ תַּחַת הַשָּׁמֶשׁ."
+            {bookConfig[selectedBook].heroQuote}
           </p>
         </motion.div>
       </section>
@@ -206,7 +251,7 @@ export default function App() {
           ) : (
             <div className="text-center py-20 border-2 border-dashed border-accent/10 rounded-3xl">
               <p className="text-ink/40 font-classic italic">
-                {searchQuery ? `לא נמצאו תוצאות עבור "${searchQuery}"` : 'טרם נכתבו פרקים בבלוג זה...'}
+                {searchQuery ? `לא נמצאו תוצאות עבור "${searchQuery}"` : `טרם נכתבו פרקים בבלוג ${selectedBook === 'kohelet' ? 'קהלת' : 'משלי'}...`}
               </p>
             </div>
           )}
@@ -245,7 +290,11 @@ export default function App() {
       </AnimatePresence>
 
       {/* Modals */}
-      <AddChapterModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <AddChapterModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        defaultBook={selectedBook}
+      />
       <EditChapterModal chapter={editingChapter} onClose={() => setEditingChapter(null)} />
 
       {/* Chapter Navigation Drawer */}
@@ -268,7 +317,7 @@ export default function App() {
             >
               <div className="p-6 border-b border-accent/10 flex justify-between items-center bg-white">
                 <div className="flex items-center gap-3">
-                  <ScrollText className="w-6 h-6 text-accent" />
+                  {bookConfig[selectedBook].icon}
                   <h3 className="text-lg font-serif font-bold text-accent">תוכן העניינים</h3>
                 </div>
                 <button
@@ -279,8 +328,8 @@ export default function App() {
                 </button>
               </div>
               <nav className="flex-1 overflow-y-auto p-6 space-y-4">
-                {chapters.length > 0 ? (
-                  chapters.map((chapter) => (
+                {filteredChapters.length > 0 ? (
+                  filteredChapters.map((chapter) => (
                     <a
                       key={chapter.id}
                       href={`#${chapter.id}`}
@@ -298,7 +347,7 @@ export default function App() {
               <div className="p-6 border-t border-accent/10 bg-accent/5">
                 <p className="text-[10px] font-bold text-accent uppercase tracking-widest mb-2">אודות הבלוג</p>
                 <p className="text-xs text-ink/60 leading-relaxed italic">
-                  "מַה-שֶּׁהָיָה הוּא שֶׁיִּהְיֶה, וּמַה-שֶּׁנַּעֲשָׂה הוּא שֶׁיֵּעָשֶׂה; וְאֵין כָּל-חָדָשׁ תַּחַת הַשָּׁמֶשׁ."
+                  {bookConfig[selectedBook].heroQuote}
                 </p>
               </div>
             </motion.div>
@@ -309,7 +358,7 @@ export default function App() {
       {/* Footer */}
       <footer className="mt-20 py-12 border-t border-accent/10 text-center">
         <p className="text-xs font-classic text-ink/30 uppercase tracking-[0.2em]">
-          קהלת 2026 &copy; כל הזכויות שמורות להבל
+          {selectedBook === 'kohelet' ? 'קהלת' : 'משלי'} 2026 &copy; כל הזכויות שמורות להבל
         </p>
       </footer>
     </div>

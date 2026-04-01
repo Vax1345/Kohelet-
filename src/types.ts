@@ -1,8 +1,11 @@
+export type Book = 'kohelet' | 'mishlei';
+
 export interface Chapter {
   id: string;
   title: string;
   content: string;
   order: number;
+  book: Book;
   originalThought?: string;
   authorId: string;
   authorName: string;

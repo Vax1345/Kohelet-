@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Loader2, Save } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { Chapter } from '../types';
+import { Chapter, Book } from '../types';
 import { toast } from 'sonner';
 
 interface EditChapterModalProps {
@@ -15,6 +15,7 @@ export function EditChapterModal({ chapter, onClose }: EditChapterModalProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [order, setOrder] = useState('1');
+  const [book, setBook] = useState<Book>('kohelet');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -22,6 +23,7 @@ export function EditChapterModal({ chapter, onClose }: EditChapterModalProps) {
       setTitle(chapter.title);
       setContent(chapter.content);
       setOrder(chapter.order?.toString() || '1');
+      setBook(chapter.book || 'kohelet');
     }
   }, [chapter]);
 
@@ -44,6 +46,7 @@ export function EditChapterModal({ chapter, onClose }: EditChapterModalProps) {
         title: title.trim(),
         content: content.trim(),
         order: parseInt(order) || 0,
+        book,
         updatedAt: serverTimestamp(),
       });
       toast.success('השינויים נשמרו בהצלחה!');
@@ -79,22 +82,36 @@ export function EditChapterModal({ chapter, onClose }: EditChapterModalProps) {
             </div>
 
             <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-accent uppercase tracking-wider">ספר</label>
+                  <select
+                    value={book}
+                    onChange={(e) => setBook(e.target.value as Book)}
+                    className="w-full p-3 bg-white border border-accent/20 rounded-lg focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all"
+                  >
+                    <option value="kohelet">קהלת 2026</option>
+                    <option value="mishlei">משלי 2026</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-accent uppercase tracking-wider">סדר תצוגה (מספר)</label>
+                  <input
+                    type="number"
+                    value={order}
+                    onChange={(e) => setOrder(e.target.value)}
+                    className="w-full p-3 bg-white border border-accent/20 rounded-lg focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-bold text-accent uppercase tracking-wider">כותרת הפרק</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full p-3 bg-white border border-accent/20 rounded-lg focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-accent uppercase tracking-wider">סדר תצוגה (מספר)</label>
-                <input
-                  type="number"
-                  value={order}
-                  onChange={(e) => setOrder(e.target.value)}
                   className="w-full p-3 bg-white border border-accent/20 rounded-lg focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all"
                 />
               </div>

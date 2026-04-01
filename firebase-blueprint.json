@@ -8,6 +8,7 @@
         "title": { "type": "string", "description": "Modern title of the thought" },
         "content": { "type": "string", "description": "The thought rewritten in Kohelet style" },
         "order": { "type": "integer", "description": "Display order of the chapter" },
+        "book": { "type": "string", "enum": ["kohelet", "mishlei"], "description": "The biblical book this chapter belongs to" },
         "originalThought": { "type": "string", "description": "The original modern thought" },
         "authorId": { "type": "string", "description": "UID of the author" },
         "authorName": { "type": "string", "description": "Display name of the author" },

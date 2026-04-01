@@ -32,10 +32,11 @@ service cloud.firestore {
     }
 
     function isValidChapter(data) {
-      return data.keys().hasAll(['title', 'content', 'authorId', 'authorName', 'createdAt', 'order']) &&
+      return data.keys().hasAll(['title', 'content', 'authorId', 'authorName', 'createdAt', 'order', 'book']) &&
              data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
              data.content is string && data.content.size() > 0 && data.content.size() <= 5000 &&
              data.order is number &&
+             data.book in ['kohelet', 'mishlei'] &&
              data.authorId == request.auth.uid &&
              data.authorName is string && data.authorName.size() > 0 && data.authorName.size() <= 100 &&
              data.createdAt is timestamp;

@@ -4,16 +4,19 @@ import { X, Loader2 } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'sonner';
+import { Book } from '../types';
 
 interface AddChapterModalProps {
   isOpen: boolean;
   onClose: () => void;
+  defaultBook?: Book;
 }
 
-export function AddChapterModal({ isOpen, onClose }: AddChapterModalProps) {
+export function AddChapterModal({ isOpen, onClose, defaultBook = 'kohelet' }: AddChapterModalProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [order, setOrder] = useState('1');
+  const [book, setBook] = useState<Book>(defaultBook);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
@@ -34,6 +37,7 @@ export function AddChapterModal({ isOpen, onClose }: AddChapterModalProps) {
         title: title.trim(),
         content: content.trim(),
         order: parseInt(order) || 0,
+        book,
         authorId: auth.currentUser.uid,
         authorName: auth.currentUser.displayName || 'אלמוני',
         createdAt: serverTimestamp(),
@@ -74,6 +78,30 @@ export function AddChapterModal({ isOpen, onClose }: AddChapterModalProps) {
             </div>
 
             <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-accent uppercase tracking-wider">ספר</label>
+                  <select
+                    value={book}
+                    onChange={(e) => setBook(e.target.value as Book)}
+                    className="w-full p-3 bg-white border border-accent/20 rounded-lg focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all"
+                  >
+                    <option value="kohelet">קהלת 2026</option>
+                    <option value="mishlei">משלי 2026</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-accent uppercase tracking-wider">סדר תצוגה (מספר)</label>
+                  <input
+                    type="number"
+                    value={order}
+                    onChange={(e) => setOrder(e.target.value)}
+                    className="w-full p-3 bg-white border border-accent/20 rounded-lg focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-bold text-accent uppercase tracking-wider">כותרת הפרק</label>
                 <input
@@ -81,16 +109,6 @@ export function AddChapterModal({ isOpen, onClose }: AddChapterModalProps) {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="למשל: על החיים ב-2026"
-                  className="w-full p-3 bg-white border border-accent/20 rounded-lg focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-accent uppercase tracking-wider">סדר תצוגה (מספר)</label>
-                <input
-                  type="number"
-                  value={order}
-                  onChange={(e) => setOrder(e.target.value)}
                   className="w-full p-3 bg-white border border-accent/20 rounded-lg focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all"
                 />
               </div>
